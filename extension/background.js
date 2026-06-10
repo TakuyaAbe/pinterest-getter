@@ -36,6 +36,23 @@ function resetState() {
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// MV3のSWは「拡張API呼び出し/イベント受信」が30秒ないと強制終了される。
+// fetchやsetTimeoutはアイドルタイマーをリセットしないため、実行中は
+// 定期的に軽いAPIを呼んで生存させる。
+let keepaliveTimer = null;
+function startKeepalive() {
+  if (keepaliveTimer) return;
+  keepaliveTimer = setInterval(() => {
+    chrome.runtime.getPlatformInfo().catch(() => {});
+  }, 20000);
+}
+function stopKeepalive() {
+  if (keepaliveTimer) {
+    clearInterval(keepaliveTimer);
+    keepaliveTimer = null;
+  }
+}
+
 function sanitize(name) {
   return (
     String(name)
@@ -232,7 +249,10 @@ const sendToOffscreen = (msg) => chrome.runtime.sendMessage(msg).catch(() => {})
 function zipViaOffscreen(jobs, zipName) {
   return new Promise((resolve) => {
     zipWaiter = { resolve };
-    ensureOffscreen()
+    // 前回の異常終了でストール中のoffscreenが残っている可能性があるので
+    // 必ず破棄してから作り直す(孤児Blobの解放と二重run防止)
+    closeOffscreen()
+      .then(() => ensureOffscreen())
       .then(() => sendToOffscreen({ type: "zip:start", jobs, zipName }))
       .catch((e) => {
         state.error = String(e?.message || e);
@@ -324,6 +344,7 @@ async function runDownload({ root, username, slug, mode, sectionId, sectionTitle
   if (state.running) return;
   resetState();
   state.running = true;
+  startKeepalive();
   try {
     const board = await getBoard(root, username, slug);
     if (!board?.id) throw new Error("ボードを取得できませんでした");
@@ -401,6 +422,7 @@ async function runDownload({ root, username, slug, mode, sectionId, sectionTitle
   } catch (e) {
     state.error = String(e?.message || e);
   } finally {
+    stopKeepalive();
     state.running = false;
     state.finished = true;
     state.phase = "";

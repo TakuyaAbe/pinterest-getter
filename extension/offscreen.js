@@ -7,15 +7,23 @@ const PART_LIMIT = 3.5 * 1024 ** 3; // zip64非対応なので4GB手前で分割
 const MAX_ENTRIES_PER_PART = 65000; // 同じく65535エントリ手前で分割
 
 let cancelled = false;
+let active = false; // run()の二重起動ガード
 const abortControllers = new Set();
 let createdUrls = [];
 
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "zip:start") {
+    if (active) {
+      send({ type: "zip:error", message: "別のZIP処理が実行中です" });
+      return;
+    }
+    active = true;
     cancelled = false;
-    run(msg.jobs, msg.zipName).catch((e) =>
-      send({ type: "zip:error", message: String(e?.message || e) })
-    );
+    run(msg.jobs, msg.zipName)
+      .catch((e) => send({ type: "zip:error", message: String(e?.message || e) }))
+      .finally(() => {
+        active = false;
+      });
   } else if (msg.type === "zip:cancel") {
     cancelled = true;
     for (const ac of abortControllers) ac.abort();
@@ -50,13 +58,23 @@ async function run(jobs, zipName) {
         if (cancelled) break;
         failed++;
       }
-      if ((done + failed) % 5 === 0) send({ type: "zip:progress", done, failed });
     }
   }
 
-  await Promise.all(
-    Array.from({ length: Math.min(FETCH_CONCURRENCY, jobs.length) }, worker)
+  // 進捗は件数トリガーではなく定期送信にする。SW側はこのメッセージが
+  // アイドルタイマーをリセットする生存信号を兼ねるため、ストール中でも
+  // 送り続ける必要がある(30秒空くとSWがkillされる)。
+  const heartbeat = setInterval(
+    () => send({ type: "zip:progress", done, failed }),
+    2500
   );
+  try {
+    await Promise.all(
+      Array.from({ length: Math.min(FETCH_CONCURRENCY, jobs.length) }, worker)
+    );
+  } finally {
+    clearInterval(heartbeat);
+  }
   send({ type: "zip:progress", done, failed });
 
   if (cancelled) {
@@ -80,9 +98,13 @@ async function run(jobs, zipName) {
   send({ type: "zip:done", parts, done, failed });
 }
 
+const FETCH_TIMEOUT_MS = 60000;
+
 async function fetchImage(url) {
   const ac = new AbortController();
   abortControllers.add(ac);
+  // 無応答ストールで永久に待たないようタイムアウトを張る
+  const timer = setTimeout(() => ac.abort(), FETCH_TIMEOUT_MS);
   try {
     let res = await fetch(url, { signal: ac.signal });
     if (!res.ok && url.includes("/originals/")) {
@@ -94,6 +116,7 @@ async function fetchImage(url) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.arrayBuffer();
   } finally {
+    clearTimeout(timer);
     abortControllers.delete(ac);
   }
 }

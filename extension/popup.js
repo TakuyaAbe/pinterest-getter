@@ -58,19 +58,24 @@ function renderState(st) {
   $("progressArea").hidden = !running && !st.finished && !st.done;
   const processed = st.done + st.failed;
   const pct = st.total ? Math.min((processed / st.total) * 100, 100) : 0;
-  $("bar").value = pct;
   const phase = st.phase ? ` (${st.phase})` : "";
   const stage = st.stage || "保存中";
-  let label =
-    st.stage === "ピン列挙中"
-      ? `${stage}: ${st.done}件見つかりました${phase}`
-      : `${stage}: ${st.done} / ${st.total}件${phase}`;
+  let label;
+  if (st.stage === "ピン列挙中") {
+    $("bar").removeAttribute("value"); // 母数未確定なのでindeterminate表示
+    label = `${stage}: ${st.done}件見つかりました${phase}`;
+  } else {
+    $("bar").value = pct;
+    label = `${stage}: ${st.done} / ${st.total}件${phase}`;
+  }
   if (st.failed) label += ` / 失敗 ${st.failed}`;
   if (!running && st.finished) {
     $("bar").value = 100;
     label = st.error
       ? `エラー: ${st.error}`
-      : `完了: ${st.done}件保存${st.failed ? ` / 失敗 ${st.failed}件` : ""} → ダウンロード/Pinterest/`;
+      : st.cancel
+        ? `キャンセルしました`
+        : `完了: ${st.done}件保存${st.failed ? ` / 失敗 ${st.failed}件` : ""} → ダウンロード/Pinterest/`;
     if (pollTimer) {
       clearInterval(pollTimer);
       pollTimer = null;
