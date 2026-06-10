@@ -95,15 +95,9 @@ macOSなら Cmd+Shift+4 で範囲選択 → 1280x800にトリミング。
 - 全処理はローカル(ブラウザ内)で完結
 
 **プライバシーポリシーURL**:
-データを収集しないため必須ではないが、求められたら下記をGitHub等に
-公開してURLを貼る:
 
 ```
-本拡張機能「Board Image Downloader for Pinterest」は、個人情報・
-閲覧履歴・認証情報を含む一切のユーザーデータを収集、保存、送信しません。
-すべての処理はユーザーのブラウザ内で完結します。
-Pinterestへのアクセスは、ユーザーが明示的にダウンロード操作を行った
-ときに、ピン情報と画像の取得のためにのみ行われます。
+https://github.com/TakuyaAbe/pinterest-getter/blob/main/PRIVACY.md
 ```
 
 ---
