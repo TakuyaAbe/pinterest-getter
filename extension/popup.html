@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body {
+      font-family: -apple-system, "Hiragino Sans", sans-serif;
+      width: 320px;
+      margin: 0;
+      padding: 14px;
+      font-size: 13px;
+      color: #211922;
+    }
+    h1 {
+      font-size: 15px;
+      margin: 0 0 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .muted { color: #767676; font-size: 12px; }
+    .modes { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+    .modes label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    select {
+      width: 100%;
+      margin: 2px 0 0 22px;
+      max-width: 280px;
+      padding: 4px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+    }
+    button {
+      width: 100%;
+      padding: 9px 0;
+      border: none;
+      border-radius: 18px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #startBtn { background: #e60023; color: #fff; }
+    #startBtn:disabled { background: #efefef; color: #aaa; cursor: default; }
+    #cancelBtn { background: #efefef; color: #211922; margin-top: 6px; }
+    progress { width: 100%; height: 8px; margin-top: 10px; }
+    #stats { margin-top: 4px; font-size: 12px; color: #555; }
+    #error { color: #cc0000; margin-top: 8px; font-size: 12px; word-break: break-all; }
+    #notboard { padding: 18px 4px; text-align: center; color: #555; }
+    .zipopt {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 0 0 10px;
+      cursor: pointer;
+      font-size: 12px;
+      color: #444;
+    }
+  </style>
+</head>
+<body>
+  <div id="notboard" hidden>
+    Pinterestのボードページを開いた状態で<br />クリックしてください
+  </div>
+
+  <div id="main" hidden>
+    <h1 id="boardname">読み込み中...</h1>
+    <div class="muted" id="counts"></div>
+
+    <div class="modes">
+      <label><input type="radio" name="mode" value="all" checked />ボード全体(セクション込み)</label>
+      <label><input type="radio" name="mode" value="board" />ボード直下のピンのみ</label>
+      <label><input type="radio" name="mode" value="sections" />全セクションのみ</label>
+      <label><input type="radio" name="mode" value="section" id="modeSection" />特定のセクション</label>
+      <select id="sectionSelect" disabled></select>
+    </div>
+
+    <label class="zipopt">
+      <input type="checkbox" id="zipMode" checked />
+      ZIPにまとめて保存(保存ダイアログは1回だけ)
+    </label>
+
+    <button id="startBtn">ダウンロード開始</button>
+    <button id="cancelBtn" hidden>キャンセル</button>
+
+    <div id="progressArea" hidden>
+      <progress id="bar" max="100" value="0"></progress>
+      <div id="stats"></div>
+    </div>
+    <div id="error"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
