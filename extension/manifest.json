@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Pinterest Board Downloader",
+  "name": "Board Image Downloader for Pinterest",
   "version": "1.0.0",
-  "description": "Pinterestボードの画像をオリジナル解像度で一括ダウンロード(ボード全体/直下のみ/セクション選択)",
+  "description": "ボードの画像をオリジナル解像度で一括ダウンロード。ボード全体/直下のみ/セクション選択に対応し、ZIPまとめ保存も可能。",
   "permissions": ["downloads", "offscreen"],
   "host_permissions": [
     "https://*.pinterest.com/*",
@@ -21,7 +21,7 @@
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Pinterest Board Downloader",
+    "default_title": "Board Image Downloader for Pinterest",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
